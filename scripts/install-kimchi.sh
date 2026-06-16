@@ -69,14 +69,20 @@ else
 fi
 
 # ── Extract ──────────────────────────────────────────────────────────
+# The tarball uses a prefix layout (bin/kimchi, share/...).
+# We extract to the parent directory so bin/ lands inside the target.
+KIMCHI_PREFIX="$(dirname "${KIMCHI_INSTALL_DIR}")"
+if [[ "${KIMCHI_PREFIX}" == "." ]]; then
+  KIMCHI_PREFIX="${HOME}/.local"
+fi
 
-echo "[install-kimchi] Extracting to ${KIMCHI_INSTALL_DIR}..."
-mkdir -p "${KIMCHI_INSTALL_DIR}"
-tar -xzf "${TMP_DIR}/${TARBALL_NAME}" -C "${KIMCHI_INSTALL_DIR}"
+echo "[install-kimchi] Extracting to prefix ${KIMCHI_PREFIX}..."
+mkdir -p "${KIMCHI_PREFIX}"
+tar -xzf "${TMP_DIR}/${TARBALL_NAME}" -C "${KIMCHI_PREFIX}"
 
-# Ensure the directory is on PATH for the current process.
+# Ensure the bin directory is on PATH for the current process.
 if ! command -v kimchi &>/dev/null; then
-  export PATH="${KIMCHI_INSTALL_DIR}:${PATH}"
+  export PATH="${KIMCHI_PREFIX}/bin:${PATH}"
 fi
 
 # ── Verify installation ──────────────────────────────────────────────
@@ -85,10 +91,10 @@ if command -v kimchi &>/dev/null; then
   KIMCHI_INSTALLED_VERSION="$(kimchi --version 2>/dev/null || echo "unknown")"
   echo "[install-kimchi] Kimchi installed successfully."
   echo "[install-kimchi] Version: ${KIMCHI_INSTALLED_VERSION}"
-  echo "[install-kimchi] Location: ${KIMCHI_INSTALL_DIR}/kimchi"
+  echo "[install-kimchi] Location: ${KIMCHI_PREFIX}/bin/kimchi"
 else
   echo "[install-kimchi] ERROR: kimchi binary not found after extraction." >&2
-  echo "[install-kimchi] Expected it in: ${KIMCHI_INSTALL_DIR}" >&2
+  echo "[install-kimchi] Expected it in: ${KIMCHI_PREFIX}/bin" >&2
   exit 1
 fi
 
