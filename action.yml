@@ -35,6 +35,10 @@ inputs:
     description: SHA-256 checksum of the Kimchi tarball for verification
     required: false
     default: ""
+  kimchi-download-base:
+    description: Base URL for Kimchi tarball downloads (e.g. https://get.kimchi.dev/releases)
+    required: false
+    default: "https://get.kimchi.dev/releases"
   job-timeout:
     description: Timeout in seconds for the self-healing job
     required: false
@@ -68,6 +72,7 @@ runs:
       run: |
         export KIMCHI_VERSION="${{ inputs.kimchi-version }}"
         export KIMCHI_SHA256="${{ inputs.kimchi-sha256 }}"
+        export KIMCHI_DOWNLOAD_BASE="${{ inputs.kimchi-download-base }}"
         "${{ github.action_path }}/scripts/install-kimchi.sh"
       shell: bash
 
