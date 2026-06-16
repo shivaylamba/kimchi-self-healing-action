@@ -1,0 +1,135 @@
+name: Kimchi Self-Healing Action
+description: Automatically diagnose and repair failing CI pipelines using Kimchi's autonomous agent.
+author: shivaylamba
+branding:
+  icon: activity
+  color: purple
+
+inputs:
+  api-key:
+    description: Kimchi API key for authentication
+    required: true
+  github-token:
+    description: GitHub token for PR creation
+    required: true
+    default: ${{ github.token }}
+  test-command:
+    description: Shell command to run tests (e.g., "cd demo-app && npm test")
+    required: true
+  source-dir:
+    description: Root directory of the source code
+    required: true
+    default: "./"
+  allowed-paths:
+    description: Comma-separated glob list of paths Kimchi may modify
+    required: false
+    default: ""
+  blocked-paths:
+    description: Comma-separated glob list of paths Kimchi must NOT modify
+    required: false
+    default: ".github/workflows/**,tests/**"
+  kimchi-version:
+    description: Pinned version of Kimchi CLI to install (e.g., v0.9.1)
+    required: true
+  kimchi-sha256:
+    description: SHA-256 checksum of the Kimchi tarball for verification
+    required: false
+    default: ""
+  job-timeout:
+    description: Timeout in seconds for the self-healing job
+    required: false
+    default: "300"
+
+outputs:
+  pr-url:
+    description: URL of the created Pull Request
+    value: ${{ steps.create-pr.outputs.pr-url }}
+  fix-applied:
+    description: Whether a fix was applied
+    value: ${{ steps.validate-paths.outputs.fix-applied }}
+  validation-passed:
+    description: Whether post-repair tests passed
+    value: ${{ steps.validate-fix.outputs.validation-passed }}
+
+runs:
+  using: composite
+  steps:
+    - name: Capture failure
+      id: capture-failure
+      run: |
+        export TEST_CMD="${{ inputs.test-command }}"
+        export SOURCE_DIR="${{ inputs.source-dir }}"
+        export FAILURE_LOG="failure.log"
+        "${{ github.action_path }}/scripts/collect-failure.sh"
+      shell: bash
+
+    - name: Install Kimchi CLI
+      id: install-kimchi
+      run: |
+        export KIMCHI_VERSION="${{ inputs.kimchi-version }}"
+        export KIMCHI_SHA256="${{ inputs.kimchi-sha256 }}"
+        "${{ github.action_path }}/scripts/install-kimchi.sh"
+      shell: bash
+
+    - name: Run Kimchi
+      id: run-kimchi
+      run: |
+        export KIMCHI_API_KEY="${{ inputs.api-key }}"
+        export TEST_CMD="${{ inputs.test-command }}"
+        export SOURCE_DIR="${{ inputs.source-dir }}"
+        export ALLOWED_PATHS="${{ inputs.allowed-paths }}"
+        export BLOCKED_PATHS="${{ inputs.blocked-paths }}"
+        export JOB_TIMEOUT="${{ inputs.job-timeout }}"
+        "${{ github.action_path }}/scripts/run-kimchi.sh"
+      shell: bash
+
+    - name: Validate fix
+      id: validate-fix
+      continue-on-error: true
+      run: |
+        echo "::group::[kimchi] Validating post-repair tests"
+        (
+          set +euo pipefail
+          cd "${{ inputs.source-dir }}"
+          eval "${{ inputs.test-command }}"
+          exit $?
+        )
+        TEST_EXIT_CODE=$?
+        if [ "$TEST_EXIT_CODE" -eq 0 ]; then
+          echo "validation-passed=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::Validation passed — tests succeeded"
+        else
+          echo "validation-passed=false" >> "$GITHUB_OUTPUT"
+          echo "::error::Validation failed — tests still failing with exit code: $TEST_EXIT_CODE"
+          exit 1
+        fi
+        echo "::endgroup::"
+      shell: bash
+
+    - name: Validate modified paths
+      id: validate-paths
+      run: |
+        export BLOCKED_PATHS="${{ inputs.blocked-paths }}"
+        export ALLOWED_PATHS="${{ inputs.allowed-paths }}"
+        "${{ github.action_path }}/scripts/validate-paths.sh"
+      shell: bash
+
+    - name: Create pull request
+      if: steps.validate-fix.outcome == 'success'
+      id: create-pr
+      run: |
+        export GITHUB_TOKEN="${{ inputs.github-token }}"
+        export VALIDATION_PASSED="${{ steps.validate-fix.outputs.validation-passed }}"
+        "${{ github.action_path }}/scripts/create-pr.sh"
+      shell: bash
+
+    - name: Upload self-healing artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: kimchi-self-healing-artifacts
+        path: |
+          failure.log
+          failure.log.exitcode
+        if-no-files-found: warn
+        retention-days: 7
