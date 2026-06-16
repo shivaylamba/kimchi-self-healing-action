@@ -4,11 +4,13 @@ A GitHub Composite Action that automatically diagnoses and repairs failing CI pi
 
 ## What it does
 
-1. Captures test failures and exits codes
+1. Captures test failures and exit codes
 2. Invokes Kimchi to analyze and fix the code
 3. Re-runs tests to validate the fix
 4. Checks that only allowed paths were modified
 5. Opens a pull request if validation passes
+
+> ⚠️ **Important:** `github-token` must be a **Personal Access Token (PAT)** with `repo` scope. The default `secrets.GITHUB_TOKEN` provided by GitHub Actions is **blocked** from creating pull requests.
 
 ## Usage
 
@@ -18,10 +20,10 @@ A GitHub Composite Action that automatically diagnoses and repairs failing CI pi
   uses: shivaylamba/kimchi-self-healing-action@v1
   with:
     api-key: ${{ secrets.KIMCHI_API_KEY }}
-    github-token: ${{ secrets.GITHUB_TOKEN }}
+    github-token: ${{ secrets.KIMCHI_PAT }}
     test-command: cd demo-app && npm test
     source-dir: demo-app
-    kimchi-version: v0.9.1
+    kimchi-version: v0.1.21
 ```
 
 ## Inputs
