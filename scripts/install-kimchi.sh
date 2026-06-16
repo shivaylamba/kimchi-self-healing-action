@@ -11,7 +11,7 @@ KIMCHI_VERSION="${KIMCHI_VERSION:-}"
 KIMCHI_SHA256="${KIMCHI_SHA256:-}"
 KIMCHI_PLATFORM="${KIMCHI_PLATFORM:-}"
 KIMCHI_INSTALL_DIR="${KIMCHI_INSTALL_DIR:-${HOME}/.local/bin}"
-KIMCHI_DOWNLOAD_BASE="${KIMCHI_DOWNLOAD_BASE:-https://get.kimchi.dev/releases}"
+KIMCHI_DOWNLOAD_BASE="${KIMCHI_DOWNLOAD_BASE:-https://github.com/getkimchi/kimchi/releases/download}"
 
 # ── Pre-flight checks ────────────────────────────────────────────────
 
@@ -25,10 +25,10 @@ fi
 # Auto-detect platform if not provided.
 if [[ -z "${KIMCHI_PLATFORM}" ]]; then
   case "$(uname -sm)" in
-    "Linux x86_64") KIMCHI_PLATFORM="linux-amd64" ;;
-    "Linux aarch64") KIMCHI_PLATFORM="linux-arm64" ;;
-    "Darwin x86_64") KIMCHI_PLATFORM="darwin-amd64" ;;
-    "Darwin arm64")  KIMCHI_PLATFORM="darwin-arm64" ;;
+    "Linux x86_64") KIMCHI_PLATFORM="linux_amd64" ;;
+    "Linux aarch64") KIMCHI_PLATFORM="linux_arm64" ;;
+    "Darwin x86_64") KIMCHI_PLATFORM="darwin_amd64" ;;
+    "Darwin arm64")  KIMCHI_PLATFORM="darwin_arm64" ;;
     *)
       echo "[install-kimchi] ERROR: Unsupported platform: $(uname -sm)"
       exit 1
@@ -37,7 +37,7 @@ if [[ -z "${KIMCHI_PLATFORM}" ]]; then
   echo "[install-kimchi] Auto-detected platform: ${KIMCHI_PLATFORM}"
 fi
 
-TARBALL_NAME="kimchi-${KIMCHI_PLATFORM}.tar.gz"
+TARBALL_NAME="kimchi_${KIMCHI_PLATFORM}.tar.gz"
 DOWNLOAD_URL="${KIMCHI_DOWNLOAD_BASE}/${KIMCHI_VERSION}/${TARBALL_NAME}"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
