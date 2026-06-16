@@ -5,8 +5,9 @@ set -euo pipefail
 # Checks for uncommitted changes, creates a branch, commits, pushes,
 # and opens a Pull Request via the GitHub CLI (gh).
 
-# Repository root derived from script location.
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Repository root: prefer GITHUB_WORKSPACE (composite action runs in checkout),
+# fallback to script location for local testing.
+REPO_ROOT="${GITHUB_WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 # Configuration (override via environment).
 SOURCE_DIR="${SOURCE_DIR:-${REPO_ROOT}}"

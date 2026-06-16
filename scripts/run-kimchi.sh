@@ -7,8 +7,9 @@ set -euo pipefail
 # (KIMCHI_ACTIVE_FERMENT + kimchi --headless) whenever possible and
 # falls back to kimchi --print if headless mode is unavailable.
 
-# Repository root derived from script location.
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Repository root: prefer GITHUB_WORKSPACE (composite action runs in checkout),
+# fallback to script location for local testing.
+REPO_ROOT="${GITHUB_WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 # Configuration (override via environment).
 FAILURE_LOG="${FAILURE_LOG:-${REPO_ROOT}/failure.log}"

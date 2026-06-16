@@ -6,8 +6,9 @@ set -euo pipefail
 # Prints rejected diffs to stderr and exits 1 on violation.
 # Sets GITHUB_OUTPUT variables (fix-applied, validation-passed).
 
-# Repository root derived from script location.
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Repository root: prefer GITHUB_WORKSPACE (composite action runs in checkout),
+# fallback to script location for local testing.
+REPO_ROOT="${GITHUB_WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 # Configuration (override via environment).
 BLOCKED_PATHS="${BLOCKED_PATHS:-}"
