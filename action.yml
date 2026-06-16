@@ -120,7 +120,7 @@ runs:
       shell: bash
 
     - name: Create pull request
-      if: steps.validate-fix.outcome == 'success'
+      if: steps.validate-fix.outputs.validation-passed == 'true'
       id: create-pr
       run: |
         export GITHUB_TOKEN="${{ inputs.github-token }}"
